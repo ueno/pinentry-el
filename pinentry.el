@@ -21,6 +21,22 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
 
+;;; Commentary:
+
+;; This package enables GnuPG passphrase input from the minibuffer,
+;; instead of graphical prompt.  To use, add allow-emacs-pinentry to
+;; your ~/.gnupg/gpg-agent.conf, and start the server with M-x
+;; pinentry-start.
+;;
+;; The actual comminication between the relevant components is follows:
+;;
+;;   gpg --> gpg-agent --> pinentry --> Emacs
+;;
+;; where the communication between pinentry and Emacs are done through
+;; a Unix domain socket located under $TMPDIR/emacs$UID/ (the same
+;; directory as server.el uses).  The protocol is basically the same
+;; as the Pinentry Assuan protocol.
+
 ;;; Code:
 
 (defvar pinentry--server-process nil)
@@ -43,6 +59,7 @@ If local sockets are not supported, this is nil.")
     "SETREPEAT" "SETREPEATERROR"
     "SETOK" "SETCANCEL" "SETNOTOK"))
 
+;; These error codes are defined in libgpg-error/src/err-codes.h.in.
 (defmacro pinentry--error-code (code)
   (logior (lsh 5 24) code))
 (defconst pinentry--error-not-implemented
@@ -56,7 +73,10 @@ If local sockets are not supported, this is nil.")
 
 ;;;###autoload
 (defun pinentry-start ()
-  "Start a Pinentry service."
+  "Start a Pinentry service.
+
+Once the environment is properly set, subsequent invocations of
+the gpg command will interact with Emacs for passphrase input."
   (interactive)
   (unless (featurep 'make-network-process '(:family local))
     (error "local sockets are not supported"))
@@ -92,19 +112,23 @@ If local sockets are not supported, this is nil.")
   (setq pinentry--connection-process-list nil))
 
 (defun pinentry--labels-to-shortcuts (labels)
+  "Convert strings in LABEL by stripping mnemonics."
   (mapcar (lambda (label)
             (when label
-              (if (string-match "_\\([[:alnum:]]\\)" label)
-                  (let* ((key (match-string 1 label))
-                         (c (downcase (aref key 0))))
-                    (setq label (replace-match
-                                 (propertize key 'face 'underline)
-                                 t t label))
-                    (cons c label))
-                (cons (if (= (length label) 0)
-                          ??
-                        (downcase (aref 0 label)))
-                      label))))
+              (let (c)
+                (if (string-match "\\(?:\\`\\|[^_]\\)_\\([[:alnum:]]\\)" label)
+                    (let ((key (match-string 1 label)))
+                      (setq c (downcase (aref key 0)))
+                      (setq label (replace-match
+                                   (propertize key 'face 'underline)
+                                   t t label)))
+                  (setq c (if (= (length label) 0)
+                              ??
+                            (downcase (aref label 0)))))
+                ;; Double underscores mean a single underscore.
+                (when (string-match "__" label)
+                  (setq label (replace-match "_" t t label)))
+                (cons c label))))
           labels))
 
 (defun pinentry--escape-string (string)
