@@ -3,6 +3,7 @@
 ;; Copyright (C) 2015 Free Software Foundation, Inc.
 
 ;; Author: Daiki Ueno <ueno@gnu.org>
+;; Version: 0.1
 ;; Keywords: GnuPG
 
 ;; This file is part of GNU Emacs.
