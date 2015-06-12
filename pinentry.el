@@ -23,19 +23,27 @@
 
 ;;; Commentary:
 
-;; This package enables GnuPG passphrase input from the minibuffer,
-;; instead of graphical prompt.  To use, add allow-emacs-pinentry to
-;; your ~/.gnupg/gpg-agent.conf, and start the server with M-x
-;; pinentry-start.
+;; This package allows GnuPG passphrase to be prompted through the
+;; minibuffer instead of graphical dialog.  As of June 2015, this
+;; feature requires newer versions of GnuPG (2.1.5 or later) and
+;; Pinentry (not yet released).
 ;;
-;; The actual comminication between the relevant components is follows:
+;; To use, add allow-emacs-pinentry to ~/.gnupg/gpg-agent.conf, and
+;; start the server with M-x pinentry-start.
+;;
+;; The actual communication path between the relevant components is
+;; as follows:
 ;;
 ;;   gpg --> gpg-agent --> pinentry --> Emacs
 ;;
-;; where the communication between pinentry and Emacs are done through
-;; a Unix domain socket located under $TMPDIR/emacs$UID/ (the same
-;; directory as server.el uses).  The protocol is basically the same
-;; as the Pinentry Assuan protocol.
+;; where pinentry and Emacs communicate through a Unix domain socket
+;; created at:
+;;
+;;   ${TMPDIR-/tmp}/emacs$(id -u)/pinentry
+;;
+;; under the same directory as server.el uses.  The protocol is a
+;; subset of the Pinentry Assuan protocol described in (info
+;; "(pinentry) Protocol").
 
 ;;; Code:
 
