@@ -57,6 +57,8 @@
 (put 'pinentry-read-point 'permanent-local t)
 (defvar pinentry--read-point nil)
 (put 'pinentry--read-point 'permanent-local t)
+(defvar pinentry--simple-prompt nil
+  "If non-nil enables a simpler PIN prompt 'Enter passphrase:'")
 
 ;; We use the same location as `server-socket-dir', when local sockets
 ;; are supported.
@@ -252,9 +254,11 @@ Assuan protocol."
 		   (process-send-string process "OK\n")))
                 ("GETPIN"
                  (let ((prompt
-                        (or (cdr (assq 'desc pinentry--labels))
-                            (cdr (assq 'prompt pinentry--labels))
-                            ""))
+			(if (bound-and-true-p pinentry--simple-prompt)
+			    "Enter passphrase: "
+			    (or (cdr (assq 'desc pinentry--labels))
+				(cdr (assq 'prompt pinentry--labels))
+				"")))
 		       (confirm (not (null (assq 'repeat pinentry--labels))))
                        entry)
                    (if (setq entry (assq 'error pinentry--labels))
