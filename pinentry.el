@@ -352,12 +352,18 @@ Assuan protocol."
 				 (pinentry--send-data
 				  process encoded-passphrase)
 				 (process-send-string process "OK\n")))
+                         ((quit user-error)
+                          (message (error-message-string err))
+                          (ignore-errors
+                            (pinentry--send-error
+                             process
+                             pinentry--error-cancelled)))
                          (error
                           (message "GETPIN error %S" err)
-			    (ignore-errors
-			      (pinentry--send-error
-			       process
-			       pinentry--error-cancelled))))
+                          (ignore-errors
+                            (pinentry--send-error
+                             process
+                             pinentry--error-cancelled))))
                        (if passphrase
                            (clear-string passphrase))
                        (if escaped-passphrase
