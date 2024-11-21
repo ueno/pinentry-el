@@ -5,6 +5,7 @@
 ;; Author: Daiki Ueno <ueno@gnu.org>
 ;; Version: 0.1
 ;; Keywords: GnuPG
+;; URL: https://github.com/ueno/pinentry-el
 
 ;; This file is part of GNU Emacs.
 
