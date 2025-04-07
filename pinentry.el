@@ -113,9 +113,11 @@ If local sockets are not supported, this is nil.")
 	buffer-read-only t))
 
 (defun pinentry--prompt (labels query-function &rest query-args)
-  (let ((desc (cdr (assq 'desc labels)))
-        (error (cdr (assq 'error labels)))
-        (prompt (cdr (assq 'prompt labels))))
+  (let* ((title-label (cdr (assq 'title labels)))
+         (desc-label (cdr (assq 'desc labels)))
+         (desc (if title-label (concat title-label "\n" desc-label) desc-label))
+         (error (cdr (assq 'error labels)))
+         (prompt (cdr (assq 'prompt labels))))
     (when (string-match "[ \n]*\\'" prompt)
       (setq prompt (concat
                     (substring
@@ -150,7 +152,7 @@ If local sockets are not supported, this is nil.")
                                 pinentry-prompt-window-height))))
         (prog1 (apply query-function prompt query-args)
           (quit-window)))
-      (apply query-function (concat desc "\n" prompt) query-args))))
+      (apply query-function (if desc (concat desc "\n" prompt) prompt) query-args))))
 
 ;;;###autoload
 (defun pinentry-start (&optional quiet)
