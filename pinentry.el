@@ -316,7 +316,10 @@ Assuan protocol."
       (insert input)
       (goto-char pinentry--read-point)
       (beginning-of-line)
-      (while (looking-at ".*\n")        ;the input line finished
+      ;; A prompt below can outlive its client: the sentinel then kills
+      ;; this buffer, so stop rather than parse whatever buffer is current.
+      (while (and (buffer-live-p (process-buffer process))
+                  (looking-at ".*\n")) ;the input line finished
         (if (looking-at "\\([A-Z_]+\\) ?\\(.*\\)")
             (let ((command (match-string 1))
                   (string (pinentry--unescape-string (match-string 2))))
@@ -432,9 +435,12 @@ Assuan protocol."
                 (_ (ignore-errors
 		     (pinentry--send-error
 		      process
-		      pinentry--error-not-implemented))))
-              (forward-line)
-              (setq pinentry--read-point (point))))))))
+		      pinentry--error-not-implemented))))))
+        ;; Advance past every line, including one that is not a command
+        ;; (an Assuan comment), which would otherwise be read forever.
+        (when (buffer-live-p (process-buffer process))
+          (forward-line)
+          (setq pinentry--read-point (point)))))))
 
 (defun pinentry--process-sentinel (process _status)
   "The process sentinel for Emacs server connections."
